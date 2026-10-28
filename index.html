@@ -141,19 +141,6 @@ input[type=number]::-webkit-inner-spin-button{opacity:.4;}
 .regla-tag.nv3{background:#ede7f6;color:#4527a0;border:1.5px solid #ce93d8;}
 
 /* FRACCIONAR */
-.frac-wrap{margin-top:11px;background:white;border-radius:10px;padding:12px 14px;}
-.frac-label{font-size:11px;color:#888;margin-bottom:8px;}
-.frac-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
-.frac-btn{padding:5px 10px;border-radius:7px;border:1.5px solid #ddd;
-  font-family:'Montserrat',sans-serif;font-weight:600;font-size:11px;
-  cursor:pointer;background:white;color:#999;transition:all .15s;}
-.frac-btn:hover{border-color:var(--pb-dark);color:var(--pb-dark);}
-.frac-btn.sel-bdn{background:var(--bdn-teal);border-color:var(--bdn-teal);color:var(--bdn-navy);}
-.frac-btn.sel-pdm{background:var(--pdm-sky);border-color:var(--pdm-sky);color:var(--pdm-navy);}
-.frac-result{display:flex;justify-content:space-between;align-items:center;
-  background:#f7f9fc;border-radius:8px;padding:8px 12px;margin-top:6px;}
-.frac-result .fl{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.6px;}
-.frac-result .fv{font-family:'Montserrat',sans-serif;font-weight:800;font-size:15px;color:var(--pb-dark);}
 
 /* SALDO */
 .saldo-bar{border-radius:10px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
@@ -789,7 +776,7 @@ function addLoteSlot(){
   if(!activeProject){alert('Primero selecciona un proyecto');return;}
   if(loteSlots.length>=maxSlots){alert(`Máximo ${maxSlots} lotes`);return;}
   const idx=loteSlots.length;
-  loteSlots.push({lotId:'',ST:{inicialMonto:0,fracCuotas:1,siCuotas:0,ciCuotas:0,precioCustom:0,teaCustom:0}});
+  loteSlots.push({lotId:'',ST:{inicialMonto:0,siCuotas:0,ciCuotas:0,precioCustom:0,teaCustom:0}});
   renderSlotSelector(idx); updateAddBtn();
 }
 function removeLoteSlot(idx){
@@ -835,7 +822,7 @@ function renderSlotSelector(idx){
 
 function onSlotLotChange(idx,lotId){
   loteSlots[idx].lotId=lotId;
-  loteSlots[idx].ST={inicialMonto:0,fracCuotas:1,siCuotas:0,ciCuotas:0,precioCustom:0,teaCustom:0};
+  loteSlots[idx].ST={inicialMonto:0,siCuotas:0,ciCuotas:0,precioCustom:0,teaCustom:0};
   renderAllCards();
 }
 
@@ -930,7 +917,7 @@ function desactivarEtapa1(){
   loteSlots.forEach((s,i)=>{
     if(s.lotId){
       const lot=DATA.pdm&&DATA.pdm.lots.find(l=>l.id===s.lotId);
-      if(activeProject==='pdm'&&lot&&lot.etapa===1){s.lotId='';s.ST={inicialMonto:0,fracCuotas:1,siCuotas:0,ciCuotas:0,precioCustom:0,teaCustom:0};}
+      if(activeProject==='pdm'&&lot&&lot.etapa===1){s.lotId='';s.ST={inicialMonto:0,siCuotas:0,ciCuotas:0,precioCustom:0,teaCustom:0};}
     }
   });
   loteSlots.forEach((_,i)=>renderSlotSelector(i));
@@ -1019,7 +1006,6 @@ function slotPrecioInput(idx,v){
   if(contado) contado.textContent=`${sx} ${fmt(displayVal)}`;
   updateSlotCalc(idx);
 }
-function slotFrac(idx,n){loteSlots[idx].ST.fracCuotas=n; updateSlotCalc(idx);}
 function slotCiInput(idx,v){loteSlots[idx].ST.ciCuotas=parseInt(v)||0; updateSlotCalc(idx);}
 function slotSiInput(idx,v){loteSlots[idx].ST.siCuotas=parseInt(v)||0; updateSlotCalc(idx);}
 function slotTeaInput(idx,v){
@@ -1051,7 +1037,6 @@ function renderCard(idx){
   if(isBDN&&lot.obs&&lot.obs!=='—') ubicTag='<div class="ubicacion-tag">'+lot.obs+'</div>';
   else if(isPDM) ubicTag='<div class="ubicacion-tag">Vista: '+lot.vista+'</div>';
 
-  const fracBtns=[1,2,3,4,5].map(n=>'<button id="frac-btn-'+idx+'-'+n+'" class="frac-btn" onclick="slotFrac('+idx+','+n+')">'+n+'c</button>').join('');
 
   // Precio campo — SIEMPRE visible por defecto (solo incrementar).
   // Con excepción/contado se permite modificación libre (± según ese modo).
@@ -1109,11 +1094,6 @@ function renderCard(idx){
     +' oninput="slotInicialInput('+idx+',this.value)" placeholder="Ingresa el monto inicial"/>'
     +'</div><div id="pct-pill-'+idx+'" class="pct-pill neutral">—</div></div>'
     +'<div id="regla-tag-'+idx+'" class="regla-tag" style="display:none;"></div>'
-    +'<div id="frac-wrap-'+idx+'" class="frac-wrap" style="display:none;">'
-    +'<div class="frac-label">Fraccionar inicial en cuotas:</div>'
-    +'<div class="frac-btns">'+fracBtns+'</div>'
-    +'<div id="frac-result-'+idx+'" class="frac-result" style="display:none;">'
-    +'<span class="fl">Cuota inicial</span><span id="frac-val-'+idx+'" class="fv"></span></div></div>'
     +'<div id="saldo-bar-'+idx+'" class="saldo-bar" style="display:none;">'
     +'<span class="sl">Saldo a financiar</span><span id="saldo-val-'+idx+'" class="sv"></span></div>'
     +'</div>'
@@ -1164,23 +1144,6 @@ function renderCard(idx){
   }catch(e){console.error('renderCard idx='+idx+' error:',e.message,e);}
 }
 
-// ── REGLAS DE INICIAL ──
-function reglaNivel(pct){
-  if(pct<0.10) return 0;
-  if(pct<0.15) return 1;
-  if(pct<0.20) return 2;
-  if(pct<0.25) return 3;
-  return 4;
-}
-function reglaLabel(nivel){
-  return['',
-    '✅ 10–14% → Inicial fraccionable en hasta 2 cuotas',
-    '✅ 15–19% → Inicial fraccionable en hasta 3 cuotas',
-    '✅ 20–24% → Inicial fraccionable en hasta 4 cuotas',
-    '✅ 25% o más → Inicial fraccionable en hasta 5 cuotas'][nivel]||'';
-}
-function reglaCls(nivel){return['nv0','nv1','nv2','nv3','nv3'][nivel];}
-
 // ── UPDATE CALC (no DOM rebuild) ──
 function updateSlotCalc(idx){
   const slot=loteSlots[idx]; if(!slot||!slot.lotId) return;
@@ -1193,7 +1156,6 @@ function updateSlotCalc(idx){
   const pct=p>0?ini/p:0;
   const pctStr=(pct*100).toFixed(1)+'%';
   const saldo=Math.max(0,p-ini);
-  const nivel=reglaNivel(pct);
   const camp=campanaCondiciones(pct);
   let nCI=slot.ST.ciCuotas||0;
   const nSI=excepcionActiva?(slot.ST.siCuotas||0):0;
@@ -1235,7 +1197,6 @@ function updateSlotCalc(idx){
   }
   if(nSI>0&&saldo>0) cuotaSI=saldo/nSI;
   const inicialValida=ini>=minIni;
-  const maxFrac=ini>=Math.ceil(p*0.25)?5:ini>=Math.ceil(p*0.20)?4:ini>=Math.ceil(p*0.15)?3:inicialValida?2:0;
   const g=id=>document.getElementById(id);
 
   // Precio display
@@ -1246,30 +1207,11 @@ function updateSlotCalc(idx){
   const pill=g('pct-pill-'+idx);
   if(pill){pill.textContent=ini>0?pctStr:'—';pill.className='pct-pill '+(ini>0?(inicialValida?'ok-'+th:'warn'):'neutral');}
 
-  // Regla tag
+  // Regla tag — solo aviso de inicial mínima
   const rt=g('regla-tag-'+idx);
   if(rt){
     if(ini>0&&!inicialValida){rt.style.display='';rt.className='regla-tag nv0';rt.textContent='⚠️ Inicial mínima: 10% ('+sx+' '+fmt(minIni)+')';}
-    else if(ini>0&&nivel>=1){rt.style.display='';rt.className='regla-tag '+reglaCls(nivel);rt.textContent=reglaLabel(nivel);}
     else rt.style.display='none';
-  }
-
-  // Frac wrap
-  const fw=g('frac-wrap-'+idx);
-  if(fw){
-    if(maxFrac>0&&inicialValida){
-      fw.style.display='';
-      if(slot.ST.fracCuotas>maxFrac) slot.ST.fracCuotas=1;
-      [1,2,3,4,5].forEach(function(n){
-        const b=g('frac-btn-'+idx+'-'+n);
-        if(b){b.style.display=n<=maxFrac?'':'none';b.className='frac-btn'+(slot.ST.fracCuotas===n?' sel-'+th:'');}
-      });
-      const fr=g('frac-result-'+idx), fv=g('frac-val-'+idx);
-      if(fr&&fv){
-        if(slot.ST.fracCuotas>=2){fr.style.display='flex';fv.textContent=sx+' '+fmt(ini/slot.ST.fracCuotas)+' × '+slot.ST.fracCuotas;}
-        else fr.style.display='none';
-      }
-    } else fw.style.display='none';
   }
 
   // Saldo bar
@@ -1605,9 +1547,7 @@ function exportPDF(){
           <div>
             <div style="font-size:7px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;">Cuota Inicial</div>
             <div style="font-family:Arial,sans-serif;font-weight:900;font-size:17px;color:white;">${sx} ${fmt(ini)}</div>
-            ${slot.ST.fracCuotas>=2
-              ?'<div style="font-size:8px;color:rgba(255,255,255,.7);margin-top:2px;">'+slot.ST.fracCuotas+' cuotas de '+sx+' '+fmt(ini/slot.ST.fracCuotas)+' c/u</div>'
-              :'<div style="font-size:8px;color:rgba(255,255,255,.7);margin-top:2px;">Pago único</div>'}
+            <div style="font-size:8px;color:rgba(255,255,255,.7);margin-top:2px;">Pago único</div>
           </div>
           <div style="background:${AC_};color:${TC_};border-radius:8px;padding:5px 11px;text-align:center;">
             <div style="font-size:7px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:1px;">Inicial</div>
@@ -1776,7 +1716,7 @@ function exportPDF(){
           <td style="padding:7px 9px;border-bottom:1px solid #eee;font-size:11px;color:#22285D;text-align:right;">${sx} ${fmt(p)}</td>
           <td style="padding:7px 9px;border-bottom:1px solid #eee;text-align:right;">
             <div style="font-size:11px;font-weight:700;color:#22285D;">${sx} ${fmt(ini)}</div>
-            <div style="font-size:9px;color:#888;">${pctStr}${slot.ST.fracCuotas>=2?' · '+slot.ST.fracCuotas+' cuotas':''}</div>
+            <div style="font-size:9px;color:#888;">${pctStr}</div>
           </td>
           <td style="padding:7px 9px;border-bottom:1px solid #eee;font-size:11px;color:#22285D;text-align:right;">${sx} ${fmt(saldo)}</td>
           <td style="padding:7px 9px;border-bottom:1px solid #eee;text-align:right;">
